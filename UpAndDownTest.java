@@ -1,11 +1,15 @@
 import java.util.Random;
-
 import org.apache.commons.math3.stat.inference.ChiSquareTest;
 
 
 public class UpAndDownTest
 {
-	private int N = 50;
+	private double[] nRandom;
+	private int[] iSequence;
+	private int[] iCalcSequence;
+	private double[] valoriAttesi;
+	private long[] iMaxSequence;
+	
 	private int[] facts = {
 		1,
 		1,
@@ -20,18 +24,34 @@ public class UpAndDownTest
 		362880
 	};
 	
-	public UpAndDownTest(int n) {
-		N = n;
+	public UpAndDownTest(int n)
+	{
+		generaNumeriRand(n);
+		generaZeroUno(n);
+		contaRunUp(n);
+		contaValoriAttesi(n);
+		
+		boolean res1 = testChiQuadro(0.05D);
+		boolean res2 = testChiQuadro(0.01D);
+		
+		System.out.print("Test Chi quadro con alpha 0.05 : ");
+		if(res1)
+			System.out.println("Passato");
+		else System.out.println("Non passato");
+		
+		System.out.print("Test Chi quadro con alpha 0.01 : ");
+		if(res2)
+			System.out.println("Passato");
+		else System.out.println("Non passato");
+		
+		System.out.println("------------------------");
 	}
 
-	public UpAndDownTest() {
-	}
-
-	public void makeTest()
+	private void generaNumeriRand(int N)
 	{
 		System.out.println("Test Iniziato!");
 		
-		double[] nRandom = new double[N];
+		nRandom = new double[N];
 		Random rdm = new Random();
 		for(int i=0; i<N; i++)
 		{
@@ -55,48 +75,61 @@ public class UpAndDownTest
 		System.out.println(nRandom[N - 1]+ "]");
 		
 		System.out.println("------------------------");
-		
-		int[] iSequence = new int[N];
+	}
+	
+	private void generaZeroUno(int N)
+	{
+		iSequence = new int[N];
 		for(int i=0; i<N - 1; i++)
 			iSequence[i] = (nRandom[i] < nRandom[i+1]) ? 1 : 0;
 		
 		System.out.print("Sequenza run up/run down: ");
 		for(int i=0; i<N; i++)
 			System.out.print(iSequence[i]);
-		
+	}
+	
+	private void contaRunUp(int N)
+	{
+		iCalcSequence = new int[N];
+		int i = 0;
 		int j = 0;
-		int[] iCalcSequence = new int[N];
-		for(int i=0; i<N;)
+		while(i < N)
 		{
 			double lastNumber = iSequence[i];
 			while(i < N && lastNumber == iSequence[i])
 			{
-				iCalcSequence[j]++;
 				i++;
+				j++;
 			}
-			j++;
+			iCalcSequence[j] = iCalcSequence[j] + 1;
+			j = 0;
 		}
+	}
+	
+	private void contaValoriAttesi(int N)
+	{
+		int max = N - 1;
+		while(iCalcSequence[max] == 0)
+			max--;
 		
-		int max = 0;
-		for(int i=0; i<iCalcSequence.length; i++)
-			if(max < iCalcSequence[i])
-				max = iCalcSequence[i];
-		
-		long[] iMaxSequence = new long[max+1];
-		for(int i=0; i<iCalcSequence.length; i++)
-			iMaxSequence[iCalcSequence[i]]++;
-		
-		double[] valoriAttesi = new double[max+1];
-		for(int i=0; i<valoriAttesi.length; i++)
+		valoriAttesi = new double[max];
+		for(int i=0; i<max; i++)
 			valoriAttesi[i] = arrotonda(calculatesFormulas(i,N), 2);
 		
+		iMaxSequence = new long[max];
+		for(int i=0; i<max; i++)
+			iMaxSequence[i] = iCalcSequence[i + 1];
+		
 		System.out.println();
-		for(int i=0; i<iMaxSequence.length; i++)
+		for(int i=0; i<max; i++)
 		{
 			System.out.println("N° run di lunghezza "+(i+1)+": "+iMaxSequence[i]);
 			System.out.println("N° run atteso di lunghezza "+(i+1)+": "+valoriAttesi[i]);
 		}
+	}
 		
+	public boolean testChiQuadro(double alpha)
+	{
 		long[][] counts = new long[valoriAttesi.length][2];
 		for(int i=0; i<valoriAttesi.length; i++)
 		{
@@ -105,10 +138,7 @@ public class UpAndDownTest
 		}
 		
 		ChiSquareTest chi = new ChiSquareTest();
-		
-		System.out.println("------------------------");
-		System.out.println("Test Chi quadro con alpha 0.05 : "+chi.chiSquareTest(counts, 0.05));
-		System.out.println("Test Chi quadro con alpha 0.01 : "+chi.chiSquareTest(counts, 0.01)+"\n");
+		return chi.chiSquareTest(counts, alpha);
 	}
 
 	private double arrotonda(double d, int p) 
@@ -122,7 +152,7 @@ public class UpAndDownTest
 			return (double)(N+1) / 12;
 		else if(k == 1)
 			return (double)(11 * N - 14) / 12;
-		else {
+		else if(k < N - 1) {
 			double kquadrato = Math.pow(k, 2);
 			double kcubo = Math.pow(k, 3);
 			double fact = facts[k+3];
@@ -132,5 +162,6 @@ public class UpAndDownTest
 			result /= fact;
 			return result;
 		}
+		else return 2.0D / ((double) facts[N]);
 	}
 }
